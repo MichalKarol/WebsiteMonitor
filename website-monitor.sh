@@ -6,21 +6,24 @@
 # website-monitor.sh - Monitors a web page for changes
 # and sends an email notification if the content change
 
+CONFFILE=$HOME/.website-monitor/config.txt
+URLSFILE=$HOME/.website-monitor/urls.txt
+
 if ([ ! -d $HOME/.website-monitor/ ]); then
     mkdir -p $HOME/.website-monitor/data
-    touch $HOME/.website-monitor/urls.txt
-    echo -e "# Place one url per line\n" > $HOME/.website-monitor/urls.txt
-    editor $HOME/.website-monitor/urls.txt
-    touch $HOME/.website-monitor/config.txt
-    echo -e "MAILADDR=\"yourmail@domain.com\"\nPASS=password\nSERVER=server (eg. gmail.com)\nSERVERPORT=465\nIDENTITY=\"identity (eg. John Doe)\"\nSUBJECT=\"subject\"\nMESSAGE=\"message\"" > $HOME/.website-monitor/config.txt
-    editor $HOME/.website-monitor/config.txt
-    chmod 600 $HOME/.website-monitor/config.txt
+    touch $URLSFILE
+    echo -e "# Place one url per line\n" > $URLSFILE
+    editor $URLSFILE
+    touch $CONFFILE
+    echo -e "MAILADDR=\"yourmail@domain.com\"\nPASS=password\nSERVER=server (eg. gmail.com)\nSERVERPORT=465\nIDENTITY=\"identity (eg. John Doe)\"\nSUBJECT=\"subject\"\nMESSAGE=\"message\"" > $CONFFILE
+    editor $CONFFILE
+    chmod 600 $CONFFILE
 fi
 
-if ([ -e $HOME"/.website-monitor/urls.txt" ] && [ -e $HOME"/.website-monitor/config.txt" ]); then
+if ([ -e $URLSFILE ] && [ -e $CONFFILE ]); then
     while read URL; do
         if ([ ! -z "$URL" ] && [[ ! $URL =~ ^#+ ]]); then
-            . $HOME"/.website-monitor/config.txt"
+            . $CONFFILE
             
             USERNAME=$(echo $MAILADDR | base64)
             PASSWORD=$(echo $PASS | base64)
@@ -35,9 +38,7 @@ if ([ -e $HOME"/.website-monitor/urls.txt" ] && [ -e $HOME"/.website-monitor/con
             fi
             
             RIGHTSUM=$(cat $WEBFILE".new" | md5sum | awk '{print $1}')
-            echo $LEFTSUM
-            echo $RIGHTSUM
-            
+                        
             if ([ -e $WEBFILE ] && [ ! $LEFTSUM == $RIGHTSUM ]); then
                 (echo -ne "ehlo "$SERVER"\r\n"; sleep 1;
                 echo -ne "auth login\r\n"; sleep 1;
@@ -51,8 +52,5 @@ if ([ -e $HOME"/.website-monitor/urls.txt" ] && [ -e $HOME"/.website-monitor/con
             fi
             mv $WEBFILE".new" $WEBFILE
         fi
-    done < $HOME"/.website-monitor/urls.txt"
+    done < $URLSFILE
 fi
-
-
-
